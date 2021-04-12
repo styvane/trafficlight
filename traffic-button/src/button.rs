@@ -11,9 +11,9 @@ use structopt::StructOpt;
 /// A traffic light pedestrian's push button.
 ///
 /// When you press return/enter on the keyboard, it
-/// sends a UDP packet to a host/port specified.
+/// sends a UDP packet to the host/port specified.
 ///
-/// The specified host/port must an instance of UDP server up and running.
+/// The specified host/port must an up and running UDP server.
 #[structopt(rename_all = "kebab-case", name = "button")]
 pub struct ButtonOption {
     #[structopt(short, long)]
