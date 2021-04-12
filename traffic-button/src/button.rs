@@ -2,7 +2,7 @@
 //!
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent};
-use std::io::ErrorKind;
+use std::io::{Error, ErrorKind};
 use std::net::UdpSocket;
 
 use structopt::StructOpt;
@@ -37,30 +37,28 @@ impl Button {
         Button { opt, sock }
     }
 
-    fn handle_key_event(&mut self, message: &[u8], addr: &str) {
+    fn handle_key_event(&mut self, message: &[u8], addr: &str) -> Result<(), Error> {
         if let Err(error) = self.sock.send_to(message, addr) {
             match error.kind() {
                 ErrorKind::NotConnected => eprintln!("Error: not connected"),
-                ErrorKind::UnexpectedEof => (),
-                _ => return,
+                ErrorKind::UnexpectedEof => return Err(error),
+                _ => return Ok(()),
             }
         }
+        Ok(())
     }
 
     /// Push a button.
-    pub fn push(&mut self) {
-        loop {
-            println!("::Button:: [Press Return]");
-            match event::read().unwrap() {
-                Event::Key(KeyEvent { code, .. }) if code == KeyCode::Enter => {
-                    let addr = format!("{}:{}", self.opt.host, self.opt.port);
-                    let message = format!("press button ({})", addr);
-                    let message = message.as_bytes();
-                    self.handle_key_event(message, &addr);
-                    println!("Pressed, {}", addr);
-                }
-                _ => return,
+    pub fn push(&mut self) -> Result<(), Error> {
+        println!("::Button:: [Press Return]");
+        match event::read().unwrap() {
+            Event::Key(KeyEvent { code, .. }) if code == KeyCode::Enter => {
+                let addr = format!("{}:{}", self.opt.host, self.opt.port);
+                let message = format!("press button ({})", addr);
+                let message = message.as_bytes();
+                return self.handle_key_event(message, &addr);
             }
+            _ => return Ok(()),
         }
     }
 }
