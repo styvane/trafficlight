@@ -327,6 +327,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "traffic-light"
+version = "0.1.0"
+dependencies = [
+ "crossterm",
+ "structopt",
+]
+
+[[package]]
 name = "unicode-segmentation"
 version = "1.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
