@@ -3,4 +3,5 @@
 members = [
     "traffic-button",
     "traffic-light",
+    "traffic-controller",
 ]

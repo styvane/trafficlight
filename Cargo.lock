@@ -327,6 +327,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "traffic-controller"
+version = "0.1.0"
+
+[[package]]
 name = "traffic-light"
 version = "0.1.0"
 dependencies = [
