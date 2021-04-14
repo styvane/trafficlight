@@ -44,13 +44,15 @@ impl Button {
                 ErrorKind::UnexpectedEof => return Err(error),
                 _ => return Ok(()),
             }
+        } else {
+            println!("pressed button");
         }
         Ok(())
     }
 
     /// Push a button.
     pub fn push(&mut self) -> Result<(), Error> {
-        println!("::Button:: [Press Return]");
+        println!("Button [Press Return]");
         match event::read().unwrap() {
             Event::Key(KeyEvent { code, .. }) if code == KeyCode::Enter => {
                 let addr = format!("{}:{}", self.opt.host, self.opt.port);
