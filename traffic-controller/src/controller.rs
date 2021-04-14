@@ -1,20 +1,31 @@
 //! This module implements the traffic light controller
 
+use std::fmt;
 use std::time::Duration;
 
-/// The Direction type is the traffic light direction.
-#[derive(Eq, PartialEq)]
-pub enum Direction {
-    NorthSouth,
-    EastWest,
-}
-
-/// Color represents a traffic light color.
-#[derive(Debug, Eq, PartialEq)]
+/// The type `Color` represents a traffic light color.
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Color {
     Red,
     Green,
     Yellow,
+}
+
+impl ToString for Color {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Red => String::from("red"),
+            Self::Green => String::from("green"),
+            Self::Yellow => String::from("yellow"),
+        }
+    }
+}
+
+/// The type `Event` is a controller event.
+#[derive(Debug, Clone)]
+pub enum Event {
+    Clock,
+    Button,
 }
 
 /// The `Controller` type represents the traffic light controller.
@@ -36,6 +47,19 @@ impl Default for Controller {
             clock: Duration::from_secs(0),
             button_is_pressed: false,
         }
+    }
+}
+
+impl fmt::Display for Controller {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Controller<ns_light={}, ew_light={}, clock={}, button_is_pressed={}",
+            self.ns_light.to_string(),
+            self.ew_light.to_string(),
+            self.clock.as_secs(),
+            self.button_is_pressed
+        )
     }
 }
 
@@ -67,6 +91,14 @@ impl Controller {
     /// Reset the clock.
     pub fn reset_clock(&mut self) {
         self.clock = Duration::from_secs(0);
+    }
+
+    /// Handle timer of button event.
+    pub fn event_handler(&mut self, event: Event) {
+        match event {
+            Event::Clock => self.next_clock(),
+            Event::Button => self.press_button(),
+        }
     }
 
     /// Increment the clock
