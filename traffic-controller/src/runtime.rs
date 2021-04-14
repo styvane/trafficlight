@@ -6,14 +6,15 @@ use crate::controller::{self, Event};
 use std::io;
 use std::net::UdpSocket;
 use std::sync::mpsc::{self, Sender};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
+use structopt::StructOpt;
 
-const NBYTES: usize = 8192;
+const NBYTES: usize = 1024;
 
 /// The Direction type is the traffic light direction
-#[derive(Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Direction {
     NorthSouth,
     EastWest,
@@ -28,61 +29,69 @@ pub trait Runtime {
     fn start(&mut self);
 }
 
-/// The `LightRuntime` type is the runtime system for the traffic lights.
-#[derive(Debug)]
-pub struct LightRuntime<'a> {
-    north_south_addr: &'a str,
-    east_west_addr: &'a str,
-    button_addr: &'a str,
-    sock: Arc<Mutex<UdpSocket>>,
+#[derive(Debug, StructOpt)]
+#[structopt(name = "runtime", rename_all = "kebab-case")]
+pub struct RuntimeOpt {
+    /// North-South light socket address
+    #[structopt(short, long)]
+    north_south_addr: String,
+
+    /// East-West light socket address
+    #[structopt(short, long)]
+    east_west_addr: String,
+
+    /// Pedestrian button socket address
+    #[structopt(short, long)]
+    button_addr: String,
 }
 
-impl<'a> LightRuntime<'a> {
-    /// Create a new light runtime.
-    pub fn new(
-        north_south_addr: &'a str,
-        east_west_addr: &'a str,
-        button_addr: &'a str,
-    ) -> io::Result<Self> {
-        let sock = Arc::new(Mutex::new(UdpSocket::bind("0.0.0.0:0")?));
+/// The `LightRuntime` type is the runtime system for the traffic lights.
+pub struct LightRuntime {
+    opt: RuntimeOpt,
+    sock: Arc<UdpSocket>,
+}
 
-        Ok(LightRuntime {
-            north_south_addr,
-            east_west_addr,
-            button_addr,
-            sock,
-        })
+impl LightRuntime {
+    /// Create a new light runtime.
+    pub fn new(opt: RuntimeOpt) -> io::Result<Self> {
+        let sock = UdpSocket::bind(&opt.button_addr)?;
+        let sock = Arc::new(sock);
+        Ok(LightRuntime { opt, sock })
     }
 
     fn emit_clock(sender: Sender<Event>) {
         loop {
-            sender.send(Event::Clock).unwrap();
+            if let Err(e) = sender.send(Event::Clock) {
+                eprintln!("{:#?}", e);
+            }
             thread::sleep(Duration::from_secs(1));
         }
     }
 
-    fn watch_button(sender: Sender<Event>, sock: Arc<Mutex<UdpSocket>>) {
-        let mut buf = [0; NBYTES];
+    fn watch_button(sender: Sender<Event>, sock: Arc<UdpSocket>) {
         loop {
-            {
-                sock.lock().unwrap().recv(&mut buf).unwrap();
-                sender.send(Event::Button).unwrap();
+            let mut buf = [0; NBYTES];
+            if let Err(e) = sock.recv(&mut buf) {
+                eprintln!("{:#?}", e);
+                continue;
             }
+
+            sender.send(Event::Button).unwrap();
         }
     }
 }
 
-impl<'a> Runtime for LightRuntime<'a> {
+impl Runtime for LightRuntime {
     /// Set the light color for a direction by sending a command.
     /// The command is sent to a UDP socket.
     fn set_color(&mut self, direction: Direction, command: &str) {
         let addr = match direction {
-            Direction::NorthSouth => self.north_south_addr,
-            Direction::EastWest => self.east_west_addr,
+            Direction::NorthSouth => &self.opt.north_south_addr,
+            Direction::EastWest => &self.opt.east_west_addr,
         };
 
         let msg = command.as_bytes();
-        self.sock.lock().unwrap().send_to(&msg, addr).unwrap();
+        self.sock.send_to(&msg, addr).unwrap();
     }
 
     fn start(&mut self) {
@@ -90,30 +99,28 @@ impl<'a> Runtime for LightRuntime<'a> {
         let (sender, receiver) = mpsc::channel();
 
         let clock_sender = sender.clone();
-        let mut handles = Vec::with_capacity(2);
-        let clock_evt = thread::spawn(move || {
+        thread::spawn(move || {
             Self::emit_clock(clock_sender);
         });
 
-        handles.push(clock_evt);
         let button_sender = sender.clone();
         let sock = self.sock.clone();
-        let button_evt = thread::spawn(move || {
+        thread::spawn(move || {
             Self::watch_button(button_sender, sock);
         });
 
         for evt in receiver {
+            println!("{}", controller);
             let (ns_light, ew_light) = (controller.ns_light.clone(), controller.ew_light.clone());
             controller.event_handler(evt);
-            if ns_light != controller.ns_light && ew_light != controller.ew_light {
+
+            if ns_light != controller.ns_light {
                 self.set_color(Direction::NorthSouth, &controller.ns_light.to_string());
+            }
+
+            if ew_light != controller.ew_light {
                 self.set_color(Direction::EastWest, &controller.ew_light.to_string());
             }
-        }
-
-        handles.push(button_evt);
-        for h in handles {
-            h.join().unwrap();
         }
     }
 }

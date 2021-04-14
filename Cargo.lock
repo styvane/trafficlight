@@ -329,6 +329,9 @@ dependencies = [
 [[package]]
 name = "traffic-controller"
 version = "0.1.0"
+dependencies = [
+ "structopt",
+]
 
 [[package]]
 name = "traffic-light"
