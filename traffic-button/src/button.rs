@@ -20,7 +20,7 @@ pub struct ButtonOption {
     port: usize,
 
     #[structopt(short, long)]
-    host: String,
+    bind_ip: String,
 }
 
 /// The type `Button` represents a pedestrian push button for traffic light.
@@ -55,7 +55,7 @@ impl Button {
         println!("Button [Press Return]");
         match event::read().unwrap() {
             Event::Key(KeyEvent { code, .. }) if code == KeyCode::Enter => {
-                let addr = format!("{}:{}", self.opt.host, self.opt.port);
+                let addr = format!("{}:{}", self.opt.bind_ip, self.opt.port);
                 let message = format!("press button ({})", addr);
                 let message = message.as_bytes();
                 return self.handle_key_event(message, &addr);
