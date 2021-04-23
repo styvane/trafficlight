@@ -15,24 +15,24 @@ use structopt::StructOpt;
 ///
 /// The specified host/port must an up and running UDP server.
 #[structopt(rename_all = "kebab-case", name = "button")]
-pub struct ButtonOption {
-    #[structopt(short, long)]
+pub struct ButtonArgs {
+    #[structopt(short, long, default_value = "23000")]
     port: usize,
 
-    #[structopt(short, long)]
+    #[structopt(short, long, default_value = "127.0.0.1")]
     bind_ip: String,
 }
 
 /// The type `Button` represents a pedestrian push button for traffic light.
 pub struct Button {
-    opt: ButtonOption,
+    opt: ButtonArgs,
     sock: UdpSocket,
 }
 
 impl Button {
     /// Create a new push button.
     /// It also create a UDP socket and bind it to an ephemeral port.
-    pub fn new(opt: ButtonOption) -> Self {
+    pub fn new(opt: ButtonArgs) -> Self {
         let sock = UdpSocket::bind("0.0.0.0:0").unwrap();
         Button { opt, sock }
     }

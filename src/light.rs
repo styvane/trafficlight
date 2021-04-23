@@ -11,8 +11,8 @@ use structopt::StructOpt;
 ///
 #[derive(Debug, StructOpt)]
 #[structopt(rename_all = "kebab-case")]
-pub struct LightOpt {
-    #[structopt(short, long, default_value = "12000")]
+pub struct LightArgs {
+    #[structopt(short, long)]
     port: usize,
 
     /// The light direction
@@ -28,10 +28,10 @@ pub struct Light {
 
 impl Light {
     /// Create a new light.
-    pub fn new(opt: LightOpt) -> Self {
-        let sock = UdpSocket::bind(format!("0.0.0.0:{}", opt.port)).unwrap();
+    pub fn new(options: LightArgs) -> Self {
+        let sock = UdpSocket::bind(format!("0.0.0.0:{}", options.port)).unwrap();
         Light {
-            direction: opt.direction,
+            direction: options.direction,
             sock,
         }
     }

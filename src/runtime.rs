@@ -31,34 +31,35 @@ pub trait Runtime {
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "runtime", rename_all = "kebab-case")]
-pub struct RuntimeOpt {
+pub struct RuntimeArgs {
     /// North-South light socket address
-    #[structopt(short, long)]
+    #[structopt(short, long, default_value = "127.0.0.1:21000")]
     north_south_addr: String,
 
     /// East-West light socket address
-    #[structopt(short, long)]
+    #[structopt(short, long, default_value = "127.0.0.1:22000")]
     east_west_addr: String,
 
     /// Pedestrian button socket address
-    #[structopt(short, long)]
+    #[structopt(short, long, default_value = "127.0.0.1:23000")]
     button_addr: String,
 }
 
 /// The `LightRuntime` type is the runtime system for the traffic lights.
 pub struct LightRuntime {
-    opt: RuntimeOpt,
+    options: RuntimeArgs,
     sock: Arc<UdpSocket>,
 }
 
 impl LightRuntime {
     /// Create a new light runtime.
-    pub fn new(opt: RuntimeOpt) -> io::Result<Self> {
-        let sock = UdpSocket::bind(&opt.button_addr)?;
+    pub fn new(options: RuntimeArgs) -> io::Result<Self> {
+        let sock = UdpSocket::bind(&options.button_addr)?;
         let sock = Arc::new(sock);
-        Ok(LightRuntime { opt, sock })
+        Ok(LightRuntime { options, sock })
     }
 
+    /// Emit clock event.
     fn emit_clock(sender: Sender<Event>) {
         loop {
             if let Err(e) = sender.send(Event::Clock) {
@@ -68,6 +69,7 @@ impl LightRuntime {
         }
     }
 
+    /// Watch button event.
     fn watch_button(sender: Sender<Event>, sock: Arc<UdpSocket>) {
         loop {
             let mut buf = [0; NBYTES];
@@ -79,6 +81,14 @@ impl LightRuntime {
             sender.send(Event::Button).unwrap();
         }
     }
+
+    fn north_south_addr(&self) -> &str {
+        &self.options.north_south_addr
+    }
+
+    pub fn east_west_addr(&self) -> &str {
+        &self.options.east_west_addr
+    }
 }
 
 impl Runtime for LightRuntime {
@@ -86,8 +96,8 @@ impl Runtime for LightRuntime {
     /// The command is sent to a UDP socket.
     fn set_color(&mut self, direction: Direction, command: &str) {
         let addr = match direction {
-            Direction::NorthSouth => &self.opt.north_south_addr,
-            Direction::EastWest => &self.opt.east_west_addr,
+            Direction::NorthSouth => self.north_south_addr(),
+            Direction::EastWest => self.east_west_addr(),
         };
 
         let msg = command.as_bytes();

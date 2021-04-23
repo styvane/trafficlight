@@ -1,7 +1,25 @@
-[workspace]
+[package]
+name = "traffic"
+version = "0.1.0"
+authors = ["Styvane Soukossi <styvane@acm.org>"]
+edition = "2018"
 
-members = [
-    "traffic-button",
-    "traffic-light",
-    "traffic-controller",
-]
+
+[[bin]]
+name = "traffic-light"
+path = "bin/traffic_light.rs"
+
+
+[[bin]]
+name = "traffic-button"
+path = "bin/traffic_button.rs"
+
+
+[[bin]]
+name = "traffic-controller"
+path = "src/main.rs"
+
+
+[dependencies]
+crossterm = "0.19"
+structopt = "0.3"
