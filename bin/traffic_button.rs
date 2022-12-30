@@ -1,9 +1,9 @@
+use clap::Parser;
+
 use traffic::button;
 
-use structopt::StructOpt;
-
 fn main() {
-    let opt = button::ButtonArgs::from_args();
+    let opt = button::ButtonArgs::parse();
     let mut btn = button::Button::new(opt);
-    while let Ok(_) = btn.push() {}
+    while btn.push().is_ok() {}
 }

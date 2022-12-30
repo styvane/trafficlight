@@ -1,22 +1,23 @@
 //! This module contains an internet connected traffic light that displays three colors.
 //!
 
-use crossterm::style::{style, Attribute, Color};
 use std::net::UdpSocket;
-use structopt::StructOpt;
+
+use clap::Parser;
+use crossterm::style::{style, Attribute, Color, Stylize};
 
 /// An internet connected traffic light that displays Red, Green and Yellow colors.
 ///
 /// To change the color, you have to send "green", "red" or "yellow" via the UDP socket.
 ///
-#[derive(Debug, StructOpt)]
-#[structopt(rename_all = "kebab-case")]
+#[derive(Debug, Parser)]
+#[command(rename_all = "kebab-case")]
 pub struct LightArgs {
-    #[structopt(short, long)]
+    #[arg(short, long)]
     port: usize,
 
     /// The light direction
-    #[structopt(short, long)]
+    #[arg(short, long)]
     direction: String,
 }
 

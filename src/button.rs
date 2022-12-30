@@ -1,25 +1,24 @@
 //! This module contains a pedestrian traffic light push button.
-//!
 
-use crossterm::event::{self, Event, KeyCode, KeyEvent};
 use std::io::{Error, ErrorKind};
 use std::net::UdpSocket;
 
-use structopt::StructOpt;
+use clap::Parser;
+use crossterm::event::{self, Event, KeyCode, KeyEvent};
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 /// A traffic light pedestrian's push button.
 ///
 /// When you press return/enter on the keyboard, it
 /// sends a UDP packet to the host/port specified.
 ///
 /// The specified host/port must an up and running UDP server.
-#[structopt(rename_all = "kebab-case", name = "button")]
+#[command(rename_all = "kebab-case", name = "button")]
 pub struct ButtonArgs {
-    #[structopt(short, long, default_value = "23000")]
+    #[arg(short, long, default_value = "23000")]
     port: usize,
 
-    #[structopt(short, long, default_value = "127.0.0.1")]
+    #[arg(short, long, default_value = "127.0.0.1")]
     bind_ip: String,
 }
 
@@ -58,9 +57,9 @@ impl Button {
                 let addr = format!("{}:{}", self.opt.bind_ip, self.opt.port);
                 let message = format!("press button ({})", addr);
                 let message = message.as_bytes();
-                return self.handle_key_event(message, &addr);
+                self.handle_key_event(message, &addr)
             }
-            _ => return Ok(()),
+            _ => Ok(()),
         }
     }
 }

@@ -2,14 +2,16 @@
 //!
 //! This module implements the traffic light runtime.
 
-use crate::controller::{self, Event};
 use std::io;
 use std::net::UdpSocket;
 use std::sync::mpsc::{self, Sender};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
-use structopt::StructOpt;
+
+use clap::Parser;
+
+use crate::controller::{self, Event};
 
 const NBYTES: usize = 1024;
 
@@ -29,19 +31,19 @@ pub trait Runtime {
     fn start(&mut self);
 }
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "runtime", rename_all = "kebab-case")]
+#[derive(Debug, Parser)]
+#[command(name = "runtime", rename_all = "kebab-case")]
 pub struct RuntimeArgs {
     /// North-South light socket address
-    #[structopt(short, long, default_value = "127.0.0.1:21000")]
+    #[arg(short, long, default_value = "127.0.0.1:21000")]
     north_south_addr: String,
 
     /// East-West light socket address
-    #[structopt(short, long, default_value = "127.0.0.1:22000")]
+    #[arg(short, long, default_value = "127.0.0.1:22000")]
     east_west_addr: String,
 
     /// Pedestrian button socket address
-    #[structopt(short, long, default_value = "127.0.0.1:23000")]
+    #[arg(short, long, default_value = "127.0.0.1:23000")]
     button_addr: String,
 }
 
@@ -101,7 +103,7 @@ impl Runtime for LightRuntime {
         };
 
         let msg = command.as_bytes();
-        self.sock.send_to(&msg, addr).unwrap();
+        self.sock.send_to(msg, addr).unwrap();
     }
 
     fn start(&mut self) {
@@ -113,10 +115,9 @@ impl Runtime for LightRuntime {
             Self::emit_clock(clock_sender);
         });
 
-        let button_sender = sender.clone();
         let sock = self.sock.clone();
         thread::spawn(move || {
-            Self::watch_button(button_sender, sock);
+            Self::watch_button(sender, sock);
         });
 
         for evt in receiver {
