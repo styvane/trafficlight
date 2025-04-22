@@ -11,12 +11,12 @@ pub enum Color {
     Yellow,
 }
 
-impl ToString for Color {
-    fn to_string(&self) -> String {
+impl fmt::Display for Color {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Red => String::from("red"),
-            Self::Green => String::from("green"),
-            Self::Yellow => String::from("yellow"),
+            Self::Red => "red".fmt(f),
+            Self::Green => "green".fmt(f),
+            Self::Yellow => "yellow".fmt(f),
         }
     }
 }
@@ -55,8 +55,8 @@ impl fmt::Display for Controller {
         write!(
             f,
             "Controller<ns_light={}, ew_light={}, clock={}, button_is_pressed={}",
-            self.ns_light.to_string(),
-            self.ew_light.to_string(),
+            self.ns_light,
+            self.ew_light,
             self.clock.as_secs(),
             self.button_is_pressed
         )

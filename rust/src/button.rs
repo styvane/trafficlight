@@ -53,7 +53,10 @@ impl Button {
     pub fn push(&mut self) -> Result<(), Error> {
         println!("Button [Press Return]");
         match event::read().unwrap() {
-            Event::Key(KeyEvent { code, .. }) if code == KeyCode::Enter => {
+            Event::Key(KeyEvent {
+                code: KeyCode::Enter,
+                ..
+            }) => {
                 let addr = format!("{}:{}", self.opt.bind_ip, self.opt.port);
                 let message = format!("press button ({})", addr);
                 let message = message.as_bytes();
